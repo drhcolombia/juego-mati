@@ -2,60 +2,66 @@
 
 .hud{flex-wrap:wrap;justify-content:space-around;gap:8px 18px;font-size:clamp(15px,2.2vw,23px)}
 
-/* Controles para iPad y otros dispositivos táctiles. */
-.touch-controls{display:none}
-.touch-tip{display:none}
-@media (hover:none), (pointer:coarse){
+
+/* Controles visibles en TODOS los dispositivos, sin depender de las
+   capacidades táctiles que Safari o una funda/trackpad reporten. */
+.touch-controls{
+  display:grid;
+  position:absolute;
+  right:12px;
+  bottom:12px;
+  z-index:2;
+  grid-template-columns:repeat(3,54px);
+  grid-template-rows:repeat(3,48px);
+  gap:4px;
+  user-select:none;
+  -webkit-user-select:none;
+  -webkit-touch-callout:none;
+  touch-action:none;
+}
+.direction-button{
+  display:grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  padding:0;
+  border:2px solid #fff5bd;
+  border-radius:13px;
+  background:#ffc83de6;
+  color:#633515;
+  box-shadow:0 3px 0 #a75c1dbb;
+  font:900 28px/1 "Trebuchet MS",Arial,sans-serif;
+  cursor:pointer;
+  touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.direction-button.up{grid-column:2;grid-row:1}
+.direction-button.left{grid-column:1;grid-row:2}
+.direction-button.right{grid-column:3;grid-row:2}
+.direction-button.down{grid-column:2;grid-row:3}
+.direction-button.is-pressed,.direction-button:active{
+  background:#ffac11;
+  transform:translateY(2px);
+  box-shadow:0 1px 0 #a75c1d;
+}
+.direction-button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.touch-tip{display:inline}
+.keyboard-tip{display:none}
+/* Una reducción suave permite jugar también en teléfonos. */
+@media(max-width:650px){
   .touch-controls{
-    display:grid;
-    grid-template-columns:repeat(3,68px);
-    grid-template-rows:repeat(3,54px);
-    gap:6px;
-    justify-content:center;
-    margin:12px auto 6px;
-    touch-action:none;
-    user-select:none;
-    -webkit-user-select:none;
-    -webkit-touch-callout:none;
+    right:5px;bottom:5px;
+    grid-template-columns:repeat(3,42px);
+    grid-template-rows:repeat(3,42px);
+    gap:3px;
   }
-  .direction-button{
-    width:100%;height:100%;padding:0;
-    border:3px solid #fff3bd;
-    border-radius:17px;
-    background:linear-gradient(#ffec8c,#ffb52e);
-    color:#65391e;
-    box-shadow:0 4px 0 #b46b24;
-    font:900 32px/1 "Trebuchet MS",Arial,sans-serif;
-    cursor:pointer;
-    touch-action:none;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .direction-button.up{grid-column:2;grid-row:1}
-  .direction-button.left{grid-column:1;grid-row:2}
-  .direction-button.right{grid-column:3;grid-row:2}
-  .direction-button.down{grid-column:2;grid-row:3}
-  .direction-button.is-pressed,.direction-button:active{
-    background:linear-gradient(#ffb52e,#f49e0a);
-    transform:translateY(3px);
-    box-shadow:0 1px 0 #b46b24;
-  }
-  .direction-button:focus-visible{outline:3px solid #fff;outline-offset:2px}
-  .keyboard-tip{display:none}
-  .touch-tip{display:inline}
+  .direction-button{font-size:22px;border-radius:10px}
 }
-@media (hover:none) and (orientation:landscape), (pointer:coarse) and (orientation:landscape){
-  .game-screen{width:min(100%,1000px,calc((100dvh - 270px)*1.6))}
-  .hud{padding:6px 10px;font-size:clamp(13px,2vw,20px)}
-  .touch-controls{grid-template-columns:repeat(3,60px);grid-template-rows:repeat(3,44px);gap:4px;margin:7px auto 5px}
-  .direction-button{font-size:27px;border-radius:13px}
-  .instructions{font-size:13px;margin:8px 0 0}
-}
-/* Teléfono horizontal: controles superpuestos para aprovechar la altura. */
-@media (hover:none) and (orientation:landscape) and (max-height:500px),
-       (pointer:coarse) and (orientation:landscape) and (max-height:500px){
-  .app{padding:4px}
-  .game-screen{width:min(100%,calc((100dvh - 75px)*1.6));position:relative}
-  .touch-controls{position:absolute;z-index:3;right:12px;bottom:8px;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,40px);margin:0;opacity:.91}
-  .instructions{display:none}
-  .hud{margin-bottom:5px}
+@media(max-height:520px) and (orientation:landscape){
+  .touch-controls{
+    right:5px;bottom:4px;
+    grid-template-columns:repeat(3,42px);
+    grid-template-rows:repeat(3,37px);
+    gap:2px;
+  }
 }
