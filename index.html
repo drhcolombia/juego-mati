@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cooper y Mr. Cangrejo</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <section id="start" class="start-screen" aria-label="Pantalla inicial">
+      <img src="Referencias/portada.png" alt="Cooper persigue a Mr. Cangrejo en un patio tropical">
+      <div class="start-actions">
+        <h1>Cooper y Mr. Cangrejo</h1>
+        <button id="play" class="big-button">JUGAR</button>
+      </div>
+    </section>
+    <section id="game" class="game-screen hidden" aria-label="Juego">
+      <header class="hud">
+        <strong>🐾 Puntos: <span id="score">0</span></strong>
+        <strong>Golpes de Cooper: <span id="hits">0</span></strong>
+        <strong>Tenazazos de Mr. Cangrejo: <span id="claw-hits">0</span></strong>
+        <strong>❤️ Vidas: <span id="lives">3</span></strong>
+      </header>
+      <div class="board">
+        <canvas id="canvas" width="960" height="600" aria-label="Patio tropical: mueve a Cooper con las flechas o WASD"></canvas>
+        <div id="message" class="message" role="status" aria-live="polite"></div>
+        <div id="game-over" class="game-over hidden">
+          <h2>Game Over</h2>
+          <p>Puntos: <span id="final-score">0</span></p>
+          <button id="restart" class="big-button">Jugar otra vez</button>
+        </div>
+      </div>
+      <p class="instructions">Mueve a Cooper con las flechas o WASD. Toca el cuerpo del cangrejo y esquiva la tenaza grande.</p>
+    </section>
+  </main>
+</body>
+</html>
