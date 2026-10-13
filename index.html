@@ -24,7 +24,7 @@
         <strong>❤️ Vidas: <span id="lives">3</span></strong>
       </header>
       <div class="board">
-        <canvas id="canvas" width="960" height="600" aria-label="Patio tropical: mueve a Cooper con las flechas o WASD"></canvas>
+        <canvas id="canvas" width="960" height="600" aria-label="Patio tropical: mueve a Cooper con las flechas en pantalla o con el teclado"></canvas>
         <div id="message" class="message" role="status" aria-live="polite"></div>
         <div id="game-over" class="game-over hidden">
           <h2>Game Over</h2>
@@ -32,7 +32,13 @@
           <button id="restart" class="big-button">Jugar otra vez</button>
         </div>
       </div>
-      <p class="instructions">Mueve a Cooper con las flechas o WASD. Toca el cuerpo del cangrejo y esquiva la tenaza grande.</p>
+      <div class="touch-controls" role="group" aria-label="Flechas para mover a Cooper">
+        <button type="button" class="direction-button up" data-direction="arrowup" aria-label="Mover arriba" aria-pressed="false">▲</button>
+        <button type="button" class="direction-button left" data-direction="arrowleft" aria-label="Mover a la izquierda" aria-pressed="false">◀</button>
+        <button type="button" class="direction-button down" data-direction="arrowdown" aria-label="Mover abajo" aria-pressed="false">▼</button>
+        <button type="button" class="direction-button right" data-direction="arrowright" aria-label="Mover a la derecha" aria-pressed="false">▶</button>
+      </div>
+      <p class="instructions"><span class="keyboard-tip">Mueve a Cooper con las flechas o WASD. </span><span class="touch-tip">Mantén pulsadas las flechas para mover a Cooper. </span>Toca el cuerpo del cangrejo y esquiva la tenaza grande.</p>
     </section>
   </main>
 </body>
