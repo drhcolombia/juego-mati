@@ -1,52 +1,34 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cooper</title>
-  <meta name="apple-mobile-web-app-title" content="Cooper">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#087ba9">
-  <link rel="apple-touch-icon" href="Assets/cooper-icon.png?v=20261012">
-  <link rel="icon" type="image/png" href="Assets/cooper-icon.png?v=20261012">
-  <link rel="manifest" href="manifest.webmanifest?v=20261012">
-  <link rel="stylesheet" href="style.css?v=20261012-2">
-  <script src="game.js?v=20261012-2" defer></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Cooper</title>
+<meta name="apple-mobile-web-app-title" content="Cooper">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#43875c">
+<link rel="apple-touch-icon" href="Assets/cooper-icon.png?v=20261012">
+<link rel="icon" type="image/png" href="Assets/cooper-icon.png?v=20261012">
+<link rel="manifest" href="manifest.webmanifest?v=20261012">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="app">
-    <section id="start" class="start-screen" aria-label="Pantalla inicial">
-      <img src="Referencias/portada.png" alt="Cooper persigue a Mr. Cangrejo en un patio tropical">
-      <div class="start-actions">
-        <h1>Cooper y Mr. Cangrejo</h1>
-        <button id="play" class="big-button">JUGAR</button>
-      </div>
-    </section>
-    <section id="game" class="game-screen hidden" aria-label="Juego">
-      <header class="hud">
-        <strong>🐾 Puntos: <span id="score">0</span></strong>
-        <strong>Golpes de Cooper: <span id="hits">0</span></strong>
-        <strong>Tenazazos de Mr. Cangrejo: <span id="claw-hits">0</span></strong>
-        <strong>❤️ Vidas: <span id="lives">3</span></strong>
-      </header>
-      <div class="board">
-        <canvas id="canvas" width="960" height="600" aria-label="Patio tropical: mueve a Cooper con las flechas en pantalla o con el teclado"></canvas>
-        <div class="touch-controls" role="group" aria-label="Flechas para mover a Cooper">
-          <button type="button" class="direction-button up" data-direction="arrowup" aria-label="Mover arriba" aria-pressed="false">▲</button>
-          <button type="button" class="direction-button left" data-direction="arrowleft" aria-label="Mover a la izquierda" aria-pressed="false">◀</button>
-          <button type="button" class="direction-button down" data-direction="arrowdown" aria-label="Mover abajo" aria-pressed="false">▼</button>
-          <button type="button" class="direction-button right" data-direction="arrowright" aria-label="Mover a la derecha" aria-pressed="false">▶</button>
-        </div>
-        <div id="message" class="message" role="status" aria-live="polite"></div>
-        <div id="game-over" class="game-over hidden">
-          <h2>Game Over</h2>
-          <p>Puntos: <span id="final-score">0</span></p>
-          <button id="restart" class="big-button">Jugar otra vez</button>
-        </div>
-      </div>
-      <p class="instructions"><span class="keyboard-tip">Mueve a Cooper con las flechas o WASD. </span><span class="touch-tip">Mantén pulsadas las flechas para mover a Cooper. </span>Toca el cuerpo del cangrejo y esquiva la tenaza grande.</p>
-    </section>
-  </main>
-</body>
-</html>
+<canvas id="world" aria-label="El patio de Cooper en tres dimensiones"></canvas>
+<div id="loading" role="status"><span class="loading-paw">🐾</span><strong>Preparando el patio…</strong><span>Una aventura para Mati</span></div>
+<header id="hud" hidden>
+  <div class="level-pill"><span class="eyebrow">NIVEL 1</span><strong>El patio de Cooper</strong></div>
+  <div class="goals"><div class="goal"><span aria-hidden="true">🦀</span><b id="captures">0 / 5</b><small>Capturas</small></div><div class="goal"><span aria-hidden="true">★</span><b id="prizes">0 / 5</b><small>Premios</small></div></div>
+  <div class="hud-right"><div id="hearts" aria-label="3 vidas">♥ ♥ ♥</div><button id="mute" class="icon-button" aria-label="Silenciar" aria-pressed="false">♫</button><button id="pause" class="icon-button" aria-label="Pausar">Ⅱ</button></div>
+</header>
+<div id="toast" role="status" aria-live="polite"></div>
+<section id="intro" class="overlay" hidden>
+  <div class="intro-card"><span class="eyebrow">UNA AVENTURA PARA MATI</span><h1>Cooper<span>y el patio de los tesoros</span></h1><p>Un jardín conocido.<br>¡Una aventura nueva!</p><div class="mission"><span>🦀 Atrapa al cangrejo <b>5 veces</b></span><span>★ Encuentra <b>5 premios</b></span></div><button id="play" class="primary">JUGAR <span>➜</span></button><small>Arrastra el joystick para explorar<br><span class="desktop-tip">En computador: WASD o flechas</span></small></div>
+  <div class="scene-caption"><span>☀</span> NIVEL 1 · EL PATIO DE COOPER</div>
+</section>
+<div id="controls" hidden><div id="joystick" aria-label="Joystick: arrastra para mover a Cooper"><div class="pad-mark north">▲</div><div class="pad-mark south">▼</div><div class="pad-mark west">◀</div><div class="pad-mark east">▶</div><div class="knob"><span>🐾</span></div></div><span class="control-tip">¡Vamos, Cooper!</span></div>
+<section id="pause-screen" class="modal" hidden><div class="panel"><span class="eyebrow">UN PEQUEÑO DESCANSO</span><h2>¡Aquí te esperamos!</h2><p>El patio se queda en pausa.</p><button id="resume" class="primary">Seguir jugando</button><button class="secondary restart">Empezar de nuevo</button></div></section>
+<section id="result" class="modal" hidden><div class="panel"><div id="result-stars">★ ★ ★</div><h2 id="result-title"></h2><p id="result-copy"></p><button class="primary restart">Jugar otra vez</button></div></section>
+<div id="confetti" aria-hidden="true"></div>
+<script type="module" src="game.js"></script>
+</body></html>
