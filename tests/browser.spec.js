@@ -1,5 +1,7 @@
 import {test,expect} from '@playwright/test';
 test('landscape: resources, keyboard, pool, pause, prizes, captures, win, reset and audio',async({page})=>{
+  // Simular el recurso externo para no depender de Wikimedia durante las pruebas.
+  await page.route('https://upload.wikimedia.org/**',route=>route.fulfill({status:200,contentType:'audio/mpeg',body:''}));
   const errors=[];page.on('pageerror',e=>errors.push(e.message));const bad=[];page.on('response',r=>{if(r.status()>=400)bad.push(r.url())});
   await page.setViewportSize({width:1180,height:820});await page.goto('?test=1');await expect(page.locator('#intro')).toBeVisible();
   await page.screenshot({path:'test-results/01-patio-inicio.png'});await page.locator('#play').click();

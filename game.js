@@ -3,7 +3,7 @@ import {LEVEL,PRIZES,clamp,move,freshState,award} from './src/level.js';
 import {createWorld} from './src/world.js';
 import {createCooper,createCrab,createPrize,mat} from './src/models.js';
 import {Controls} from './src/input.js';
-import {Sound} from './src/audio.js?v=2.1';
+import {Sound} from './src/audio.js?v=2.2';
 
 const $=id=>document.getElementById(id),canvas=$('world');
 let renderer;

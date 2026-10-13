@@ -1,5 +1,5 @@
 export class Sound{
-  constructor(){this.context=null;this.muted=false;this.barkCount=0}
+  constructor(){this.context=null;this.muted=false;this.barkCount=0;this.barkRecording=null;this.barkSampleFailed=false}
   unlock(){try{this.context??=new (window.AudioContext||window.webkitAudioContext)();if(this.context.state==='suspended')this.context.resume().catch(()=>{})}catch{}}
   play(kind){
     if(this.muted||!this.context||this.context.state!=='running')return;
@@ -12,10 +12,40 @@ export class Sound{
     }
   }
 
-  // Dos "yips" cortos de perro pequeño, sintetizados localmente: sin archivos
-  // externos y respetando el botón de silencio. Se pueden disparar en Safari.
+  // Grabación CC0 de Edo.pt2 publicada en Wikimedia Commons.
+  // https://commons.wikimedia.org/wiki/File:Ladrido_perro.ogg
+  // Para Safari se reproduce la versión MP3 y se mantiene un respaldo sintético.
   playBark(){
     if(this.muted)return false;
+    this.unlock();
+    if(!this.barkSampleFailed){
+      try{
+        if(!this.barkRecording){
+          this.barkRecording=new Audio('https://upload.wikimedia.org/wikipedia/commons/transcoded/f/fd/Ladrido_perro.ogg/Ladrido_perro.ogg.mp3');
+          this.barkRecording.preload='auto';
+          this.barkRecording.volume=.78;
+          // El tono más agudo sugiere un perro de tamaño pequeño.
+          this.barkRecording.playbackRate=1.32;
+        }
+        this.barkRecording.pause();
+        this.barkRecording.currentTime=0;
+        const playing=this.barkRecording.play();
+        if(playing?.catch)playing.catch(()=>{
+          this.barkSampleFailed=true;
+          if(!this.muted)this.playSyntheticBark();
+        });
+      }catch{
+        this.barkSampleFailed=true;
+        this.playSyntheticBark();
+      }
+    }else this.playSyntheticBark();
+    this.barkCount++;
+    return true;
+  }
+
+  // Alternativa local para fallos de red o restricciones de reproducción.
+  playSyntheticBark(){
+    if(this.muted)return;
     this.unlock();
     const c=this.context;
     if(!c)return false;
@@ -57,8 +87,10 @@ export class Sound{
     };
     yip(now,.145,480);
     yip(now+.19,.12,550);
-    this.barkCount++;
-    return true;
   }
-  toggle(){this.muted=!this.muted;return this.muted}
+  toggle(){
+    this.muted=!this.muted;
+    if(this.muted)this.barkRecording?.pause();
+    return this.muted;
+  }
 }

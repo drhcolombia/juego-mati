@@ -43,7 +43,7 @@ Los módulos ES requieren HTTP; no abrir esta versión 3D con doble clic sobre `
 - `src/input.js`: teclado y joystick con Pointer Events y captura de puntero.
 - `src/models.js`: personajes originales con geometría 3D, pelaje por capas y animaciones articuladas.
 - `src/world.js`: patio, piscina, vegetación y agua animada.
-- `src/audio.js`: efectos originales sintetizados con Web Audio, activados por un gesto.
+- `src/audio.js`: efectos sintetizados con Web Audio y ladrido grabado con alternativa sintética cuando no puede cargarse.
 - `src/batch.js`: agrupación de geometría fija para reducir llamadas de dibujo.
 - `vendor/`: Three.js 0.186.1, licencia MIT incluida. `npm run vendor` reproduce estos archivos después de `npm ci`.
 
@@ -61,3 +61,17 @@ npm run test:browser
 Las pruebas de navegador usan Chrome y tamaños de iPad horizontal (1180 × 820) y vertical (820 × 1180). Incluyen eventos táctiles reales vía protocolo del navegador, dos dedos, cancelación, teclado, pausa, reinicio, piscina, premios, capturas, vidas, victoria, Game Over y activación del contexto de audio. Las capturas automáticas se guardan en `test-results/` y no se versionan. Los accesos HTTP bajo `/juego-mati/` se comprueban sin errores de carga.
 
 Limitaciones pendientes: confirmar rendimiento y audio audible en un iPad físico, ajustar sensibilidad con Matilde y validar allí la instalación desde Safari. Las pruebas de escritorio con emulación de tamaño/tacto no certifican Safari ni la velocidad de un iPad. El agua utiliza reflejos estilizados y ondas calculadas, sin reflejos costosos en tiempo real. Solo hay un nivel; los objetivos y las posiciones están concentrados en `src/level.js` para facilitar niveles futuros.
+
+## Ladrido de Cooper (v2.2)
+
+El botón **¡GUAU!** usa el sonido [Ladrido perro.ogg](https://commons.wikimedia.org/wiki/File:Ladrido_perro.ogg)
+de Edo.pt2, publicado con licencia **CC0 1.0**. Se utiliza el MP3
+transcodificado y se sube algo el tono para acercarlo al ladrido de un perro
+pequeño. Si falla la descarga, se utiliza el sonido sintético local.
+**La grabación no es de Cooper**: para replicar su ladrido exacto habrá que
+incorporar una grabación suya.
+
+Para confirmar que el iPad muestra la versión nueva, abrir
+`https://drhcolombia.github.io/juego-mati/?v=2.2` en Safari. La portada
+debe mostrar **Cooper v2.2**. Un acceso agregado a inicio puede conservar HTML
+antiguo; cerrar la app desde el selector de aplicaciones y volver a abrirla.

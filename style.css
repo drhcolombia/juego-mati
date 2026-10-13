@@ -39,3 +39,5 @@
   #bark .bark-face{font-size:31px}
   #bark .bark-label{font-size:13px}
 }
+/* Ayuda a identificar que el iPad muestra la última versión del juego. */
+.build-version{display:block;margin-top:10px;text-align:center;font-size:11px;color:#6d856e;letter-spacing:.6px}
