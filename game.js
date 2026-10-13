@@ -38,12 +38,12 @@ function restart(){
   sound.unlock();controls.clear();state=freshState();player={...LEVEL.spawn};enemy={...LEVEL.crabSpawn};heading=Math.PI;enemyHeading=0;aiTimer=0;phase='roam';captureGrace=0;attackTimer=0;stepTimer=0;moodUntil=0;warning.visible=false;
   prizes.forEach(p=>{p.root.visible=true;p.ring.visible=true});
   for(const id of ['intro','pause-screen','result'])$(id).hidden=true;
-  $('hud').hidden=false;$('controls').hidden=false;$('confetti').replaceChildren();ui();
+  $('hud').hidden=false;$('controls').hidden=false;$('bark').hidden=false;$('confetti').replaceChildren();ui();
   look.set(player.x,1,player.z);camera.position.set(player.x,12,player.z+14);
   toast('¡Vamos, Mati! Busca al cangrejo y los 5 premios.');
 }
-function pause(){if(state.mode!=='playing')return;state.mode='paused';controls.clear();$('pause-screen').hidden=false;$('controls').hidden=true}
-function resume(){if(state.mode!=='paused')return;state.mode='playing';sound.unlock();controls.clear();$('pause-screen').hidden=true;$('controls').hidden=false;clock.getDelta()}
+function pause(){if(state.mode!=='playing')return;state.mode='paused';controls.clear();$('pause-screen').hidden=false;$('controls').hidden=true;$('bark').hidden=true}
+function resume(){if(state.mode!=='paused')return;state.mode='playing';sound.unlock();controls.clear();$('pause-screen').hidden=true;$('controls').hidden=false;$('bark').hidden=false;clock.getDelta()}
 // A non-primary finger may not generate a click on mobile browsers.
 function onPress(button,action){
   let lastTouch=-1000;
@@ -51,12 +51,27 @@ function onPress(button,action){
   button.addEventListener('click',()=>{if(performance.now()-lastTouch>500)action()});
 }
 onPress($('play'),restart);document.querySelectorAll('.restart').forEach(b=>onPress(b,restart));onPress($('pause'),pause);onPress($('resume'),resume);
+let lastBarkAt=-Infinity;
+onPress($('bark'),()=>{
+  if(state.mode!=='playing')return;
+  const now=performance.now();
+  if(now-lastBarkAt<420)return;
+  if(!sound.playBark())return;
+  lastBarkAt=now;
+  mood='bark';moodUntil=t+.36;
+  const button=$('bark');
+  button.classList.remove('barking');
+  // Reiniciar la animación visual después de cada ladrido.
+  void button.offsetWidth;
+  button.classList.add('barking');
+});
+$('bark').addEventListener('animationend',()=> $('bark').classList.remove('barking'));
 onPress($('mute'),()=>{sound.unlock();const muted=sound.toggle();$('mute').textContent=muted?'♪̸':'♫';$('mute').setAttribute('aria-label',muted?'Activar sonido':'Silenciar');$('mute').setAttribute('aria-pressed',String(muted))});
 addEventListener('blur',pause);document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 addEventListener('keydown',e=>{if(e.key==='Escape'){state.mode==='paused'?resume():pause()}});
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();toast('El navegador pausó la imagen. Recarga para volver al patio.');});
 function finish(){
-  controls.clear();$('controls').hidden=true;$('result').hidden=false;
+  controls.clear();$('controls').hidden=true;$('bark').hidden=true;$('result').hidden=false;
   const win=state.mode==='won';$('result-title').textContent=win?'¡LO LOGRASTE, MATI!':'¡Vamos otra vez!';$('result-copy').textContent=win?'Encontraste los 5 premios y atrapaste 5 veces a Mr. Cangrejo. ¡Cooper está feliz!':'Cooper necesita un descanso. ¡Prueba a rodear la tenaza cuando el cangrejo la levante!';$('result-stars').textContent=win?'★ ★ ★':'🐾';
   if(win){sound.play('win');for(let i=0;i<50;i++){const piece=document.createElement('i');piece.className='confetto';piece.style.left=`${Math.random()*100}%`;piece.style.background=['#ffd66b','#75b8a6','#ef9b83','#fff5ca'][i%4];piece.style.animationDelay=`${Math.random()*1.2}s`;$('confetti').append(piece)}}
 }
@@ -121,6 +136,6 @@ function render(){
 renderer.compile(scene,camera);$('loading').hidden=true;$('intro').hidden=false;render();
 // Test hooks exist only for local automated testing and are absent during normal play.
 if(new URLSearchParams(location.search).has('test'))window.__cooperTest={
-  get state(){return {...state,collected:[...state.collected]}},get player(){return {...player}},get enemy(){return {...enemy}},get input(){return controls.read()},get audio(){return {state:sound.context?.state,muted:sound.muted}},get stats(){return renderer.info},
+  get state(){return {...state,collected:[...state.collected]}},get player(){return {...player}},get enemy(){return {...enemy}},get input(){return controls.read()},get audio(){return {state:sound.context?.state,muted:sound.muted,barks:sound.barkCount}},get stats(){return renderer.info},
   teleport(x,z){player=move(player,x-player.x,z-player.z)},place(x,z){player={x,z}},enemyAt(x,z){enemy={x,z};captureGrace=0;phase='recover';aiTimer=10},attackAt(x,z){enemy={x,z};phase='warning';aiTimer=.2;enemyHeading=0;state.invulnerable=0},restart,pause,resume,
 };

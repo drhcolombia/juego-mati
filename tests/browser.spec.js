@@ -13,7 +13,14 @@ test('landscape: resources, keyboard, pool, pause, prizes, captures, win, reset 
   for(let i=0;i<5;i++){await page.evaluate(()=>{window.__cooperTest.place(0,-5);window.__cooperTest.enemyAt(0,-5)});await page.waitForTimeout(100)}
   await expect(page.locator('#result-title')).toHaveText('¡LO LOGRASTE, MATI!');expect((await page.evaluate(()=>window.__cooperTest.audio)).state).toBe('running');
   await page.screenshot({path:'test-results/03-victoria.png'});await page.locator('#result .restart').click();expect((await page.evaluate(()=>window.__cooperTest.state)).captures).toBe(0);
-  await page.locator('#mute').click();expect((await page.evaluate(()=>window.__cooperTest.audio)).muted).toBe(true);
+  await expect(page.locator('#bark')).toBeVisible();
+  await page.locator('#bark').click();
+  expect((await page.evaluate(()=>window.__cooperTest.audio)).barks).toBe(1);
+  await page.waitForTimeout(460);
+  await page.locator('#mute').click();
+  await page.locator('#bark').click();
+  expect((await page.evaluate(()=>window.__cooperTest.audio)).barks).toBe(1);
+  expect((await page.evaluate(()=>window.__cooperTest.audio)).muted).toBe(true);
   expect(errors).toEqual([]);expect(bad).toEqual([]);
 });
 test('portrait: real touch joystick, second finger, cancellation, damage and Game Over',async({browser})=>{
