@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cooper y Mr. Cangrejo</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="game.js" defer></script>
+  <link rel="stylesheet" href="style.css?v=20261012-2">
+  <script src="game.js?v=20261012-2" defer></script>
 </head>
 <body>
   <main class="app">
@@ -25,18 +25,18 @@
       </header>
       <div class="board">
         <canvas id="canvas" width="960" height="600" aria-label="Patio tropical: mueve a Cooper con las flechas en pantalla o con el teclado"></canvas>
+        <div class="touch-controls" role="group" aria-label="Flechas para mover a Cooper">
+          <button type="button" class="direction-button up" data-direction="arrowup" aria-label="Mover arriba" aria-pressed="false">▲</button>
+          <button type="button" class="direction-button left" data-direction="arrowleft" aria-label="Mover a la izquierda" aria-pressed="false">◀</button>
+          <button type="button" class="direction-button down" data-direction="arrowdown" aria-label="Mover abajo" aria-pressed="false">▼</button>
+          <button type="button" class="direction-button right" data-direction="arrowright" aria-label="Mover a la derecha" aria-pressed="false">▶</button>
+        </div>
         <div id="message" class="message" role="status" aria-live="polite"></div>
         <div id="game-over" class="game-over hidden">
           <h2>Game Over</h2>
           <p>Puntos: <span id="final-score">0</span></p>
           <button id="restart" class="big-button">Jugar otra vez</button>
         </div>
-      </div>
-      <div class="touch-controls" role="group" aria-label="Flechas para mover a Cooper">
-        <button type="button" class="direction-button up" data-direction="arrowup" aria-label="Mover arriba" aria-pressed="false">▲</button>
-        <button type="button" class="direction-button left" data-direction="arrowleft" aria-label="Mover a la izquierda" aria-pressed="false">◀</button>
-        <button type="button" class="direction-button down" data-direction="arrowdown" aria-label="Mover abajo" aria-pressed="false">▼</button>
-        <button type="button" class="direction-button right" data-direction="arrowright" aria-label="Mover a la derecha" aria-pressed="false">▶</button>
       </div>
       <p class="instructions"><span class="keyboard-tip">Mueve a Cooper con las flechas o WASD. </span><span class="touch-tip">Mantén pulsadas las flechas para mover a Cooper. </span>Toca el cuerpo del cangrejo y esquiva la tenaza grande.</p>
     </section>
