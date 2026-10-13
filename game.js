@@ -10,6 +10,46 @@ const messageEl = document.querySelector('#message');
 const overEl = document.querySelector('#game-over');
 const finalScoreEl = document.querySelector('#final-score');
 const keys = new Set();
+
+/* Se conservan las teclas del computador y se añaden botones multitáctiles. */
+const touchPointers=new Map();
+function isPressed(direction){
+  if(keys.has(direction))return true;
+  for(const active of touchPointers.values())if(active.direction===direction)return true;
+  return false;
+}
+function releaseTouchPointer(event){
+  const active=touchPointers.get(event.pointerId);
+  if(!active)return;
+  touchPointers.delete(event.pointerId);
+  for(const other of touchPointers.values())if(other.button===active.button)return;
+  active.button.classList.remove('is-pressed');
+  active.button.setAttribute('aria-pressed','false');
+}
+function clearTouchControls(){
+  touchPointers.clear();
+  document.querySelectorAll('.direction-button').forEach(button=>{
+    button.classList.remove('is-pressed');
+    button.setAttribute('aria-pressed','false');
+  });
+}
+document.querySelectorAll('.direction-button').forEach(button=>{
+  button.addEventListener('pointerdown',event=>{
+    if(event.pointerType==='mouse' && event.button!==0)return;
+    event.preventDefault();
+    touchPointers.set(event.pointerId,{direction:button.dataset.direction,button});
+    button.classList.add('is-pressed');
+    button.setAttribute('aria-pressed','true');
+    if(button.setPointerCapture)button.setPointerCapture(event.pointerId);
+  });
+  button.addEventListener('pointerup',releaseTouchPointer);
+  button.addEventListener('pointercancel',releaseTouchPointer);
+  button.addEventListener('lostpointercapture',releaseTouchPointer);
+  button.addEventListener('contextmenu',event=>event.preventDefault());
+});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){keys.clear();clearTouchControls()}
+});
 const W = canvas.width, H = canvas.height;
 const WORLD_W = 3600;
 const cooper = {x:140,y:455,r:30,face:1};
@@ -42,6 +82,7 @@ cooperSprite.src = 'Assets/Cooper.png';
 function reset(){
   if(!audioContext){const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(AudioContextClass)audioContext=new AudioContextClass()}
   if(audioContext&&audioContext.state==='suspended')audioContext.resume();
+  keys.clear();clearTouchControls();
   score=0;hits=0;clawHits=0;lives=3;elapsed=0;safeUntil=0;messageUntil=0;
   cooper.x=140;cooper.y=455;crab.x=720;crab.y=410;crab.dir=-1;cameraX=0;nextCrabTurn=12;nextEscapeTurn=0;
   scoreEl.textContent=score;hitsEl.textContent=hits;clawHitsEl.textContent=clawHits;livesEl.textContent=lives;
@@ -53,7 +94,7 @@ document.querySelector('#play').addEventListener('click',reset);
 document.querySelector('#restart').addEventListener('click',reset);
 addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){e.preventDefault();keys.add(k)}});
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
-addEventListener('blur',()=>keys.clear());
+addEventListener('blur',()=>{keys.clear();clearTouchControls()});
 function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
 function circle(x,y,r,fill,stroke,width=2){ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
 function ellipse(x,y,rx,ry,fill,stroke,width=2){ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke()}}
@@ -61,8 +102,8 @@ function showMessage(text){messageEl.textContent=text;messageEl.classList.add('s
 function respawn(){crab.x=clamp(cooper.x+(Math.random()<.5?-1:1)*(250+Math.random()*450),120,WORLD_W-150);crab.y=345+Math.random()*150;crab.dir=Math.random()<.5?-1:1;safeUntil=elapsed+.65}
 function update(dt){
   elapsed+=dt;
-  let dx=Number(keys.has('arrowright')||keys.has('d'))-Number(keys.has('arrowleft')||keys.has('a'));
-  let dy=Number(keys.has('arrowdown')||keys.has('s'))-Number(keys.has('arrowup')||keys.has('w'));
+  let dx=Number(isPressed('arrowright')||isPressed('d'))-Number(isPressed('arrowleft')||isPressed('a'));
+  let dy=Number(isPressed('arrowdown')||isPressed('s'))-Number(isPressed('arrowup')||isPressed('w'));
   const length=Math.hypot(dx,dy)||1;
   cooper.x=clamp(cooper.x+dx/length*250*dt,45,WORLD_W-45);
   cooper.y=clamp(cooper.y+dy/length*250*dt,305,H-48);
@@ -168,7 +209,7 @@ function background(){
 }
 function drawCooper(){
   if(!cooperSprite.complete||!cooperSprite.naturalWidth)return;
-  const walking=keys.has('arrowleft')||keys.has('arrowright')||keys.has('arrowup')||keys.has('arrowdown')||keys.has('a')||keys.has('d')||keys.has('w')||keys.has('s');
+  const walking=isPressed('arrowleft')||isPressed('arrowright')||isPressed('arrowup')||isPressed('arrowdown')||isPressed('a')||isPressed('d')||isPressed('w')||isPressed('s');
   const trot=walking?Math.sin(elapsed*17):0;
   const bob=walking?Math.abs(trot)*4:Math.sin(elapsed*2)*.7;
   ctx.save();
