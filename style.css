@@ -41,3 +41,24 @@
 }
 /* Ayuda a identificar que el iPad muestra la última versión del juego. */
 .build-version{display:block;margin-top:10px;text-align:center;font-size:11px;color:#6d856e;letter-spacing:.6px}
+
+/* Selección de mundos: botones grandes y cómodos en iPad. */
+.world-picker{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:18px 0 14px}
+.world-option{min-width:0;min-height:82px;padding:10px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:2px solid #dbe8cc;border-radius:20px;background:#ffffffd9;color:#46644b;box-shadow:0 4px 14px #294d3320;transition:background .2s,border-color .2s}
+.world-option>span{font-size:25px;line-height:1.1}
+.world-option strong{font-size:13px}
+.world-option small{font-size:11px}
+.world-option.selected{background:#e8ffca;border-color:#7fb259;box-shadow:0 0 0 2px #7fb25933,0 5px 14px #294d3320}
+.world-option:focus-visible{outline:3px solid #b98f35;outline-offset:2px}
+.next-world{margin-top:14px;background:#d2edaf;color:#41613e;border:2px solid #a1c579;border-radius:17px;font-size:15px;font-weight:bold;padding:15px 12px;min-height:52px}
+@media(orientation:portrait){
+ .world-picker{margin:14px 0 8px;gap:10px}
+ .world-option{min-height:76px}
+}
+@media(max-height:580px){
+ .world-picker{margin:9px 0 8px}
+ .world-option{min-height:65px;padding:5px 7px}
+ .world-option>span{font-size:21px}
+ .world-option strong{font-size:12px}
+ .world-option small{font-size:10px}
+}

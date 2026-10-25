@@ -1,6 +1,7 @@
 import * as T from './vendor/three.module.js';
-import {LEVEL,PRIZES,clamp,move,freshState,award} from './src/level.js';
+import {LEVELS,PRIZES,clamp,move,freshState,award} from './src/level.js';
 import {createWorld} from './src/world.js';
+import {createForestWorld} from './src/world-forest.js';
 import {createCooper,createCrab,createPrize,mat} from './src/models.js';
 import {Controls} from './src/input.js';
 import {Sound} from './src/audio.js?v=2.2';
@@ -13,12 +14,22 @@ try{
   $('loading').innerHTML='<strong>Este navegador no pudo abrir el patio 3D.</strong><span>Prueba con una versión reciente de Safari o Chrome.</span>';
   throw new Error('WebGL2 unavailable');
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+// Pruebas automáticas: usa renderizado reducido para que SwiftShader (CPU de CI)
+ // compruebe los controles sin afectar la calidad en los iPad reales.
+const isBrowserTest=new URLSearchParams(location.search).has('test');
+renderer.setPixelRatio(isBrowserTest?.65:Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled=!isBrowserTest;
+renderer.shadowMap.type=T.PCFSoftShadowMap;
 renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.14;
-const scene=new T.Scene(),camera=new T.PerspectiveCamera(46,1,.1,100);
-const world=createWorld(scene),dog=createCooper(),crab=createCrab();scene.add(dog.root,crab.root);
+let scene=new T.Scene();
+const camera=new T.PerspectiveCamera(46,1,.1,100);
+let world=createWorld(scene);
+const dog=createCooper(),crab=createCrab();
+scene.add(dog.root,crab.root);
+const worlds={patio:{scene,world}};
+let selectedWorld='patio',activeLevel=LEVELS.patio;
 const controls=new Controls($('joystick')),sound=new Sound();
-let state={...freshState(),mode:'intro'},player={...LEVEL.spawn},enemy={...LEVEL.crabSpawn},target={x:7,z:-8};
+let state={...freshState(),mode:'intro'},player={...activeLevel.spawn},enemy={...activeLevel.crabSpawn},target={x:7,z:-8};
 let heading=Math.PI,enemyHeading=0,aiTimer=0,attackTimer=0,phase='roam',captureGrace=0,stepTimer=0,moodUntil=0,mood='idle',t=0,toastUntil=0;
 const look=new T.Vector3(0,0,0),desired=new T.Vector3(),clock=new T.Clock();
 const prizes=PRIZES.map((p,i)=>{
@@ -28,6 +39,47 @@ const prizes=PRIZES.map((p,i)=>{
 });
 const warning=new T.Mesh(new T.RingGeometry(1.50,1.63,48),new T.MeshBasicMaterial({color:'#efb85b',transparent:true,opacity:.85,side:T.DoubleSide}));warning.rotation.x=-Math.PI/2;warning.visible=false;scene.add(warning);
 const particleGeometry=new T.OctahedronGeometry(.07),particles=[];
+
+// El selector conserva las escenas para que cambiar de mundo no requiera
+// descargar recursos ni volver a construir el mundo anterior.
+function chooseWorld(key){
+  if(!LEVELS[key])return;
+  if(key!==selectedWorld){
+    if(!worlds[key]){
+      const nextScene=new T.Scene();
+      worlds[key]={scene:nextScene,world:createForestWorld(nextScene)};
+    }
+    for(const particle of particles)particle.m.parent?.remove(particle.m);
+    particles.length=0;
+    ({scene,world}=worlds[key]);
+    scene.add(dog.root,crab.root,warning);
+    prizes.forEach(p=>scene.add(p.root,p.ring));
+  }
+  selectedWorld=key;
+  activeLevel=LEVELS[key];
+  player={...activeLevel.spawn};enemy={...activeLevel.crabSpawn};
+  dog.root.position.set(player.x,0,player.z);
+  crab.root.position.set(enemy.x,0,enemy.z);
+  const forest=key==='forest';
+  $('level-badge').textContent=forest?'MUNDO 2':'MUNDO 1';
+  $('level-name').textContent=forest?'El Bosque Encantado':'El patio de Cooper';
+  $('intro-subtitle').textContent=forest?'y el Bosque Encantado':'y el patio de los tesoros';
+  $('intro-description').textContent=forest?'¡Cruza el puente y encuentra los tesoros mágicos!':'Un jardín conocido. ¡Una aventura nueva!';
+  $('scene-caption').textContent=forest?'✨ MUNDO 2 · EL BOSQUE ENCANTADO':'☀ MUNDO 1 · EL PATIO DE COOPER';
+  document.querySelectorAll('[data-world]').forEach(button=>{
+    const selected=button.dataset.world===key;
+    button.classList.toggle('selected',selected);
+    button.setAttribute('aria-pressed',String(selected));
+  });
+  prizes.forEach((p,i)=>{
+    const pos=activeLevel.prizes[i];
+    p.root.position.set(pos.x,.9,pos.z);
+    p.ring.position.set(pos.x,.025,pos.z);
+    p.root.visible=p.ring.visible=true;
+  });
+  if(forest)renderer.compile(scene,camera);
+}
+
 function burst(x,z,color){for(let i=0;i<18;i++){const m=new T.Mesh(particleGeometry,mat(color));m.position.set(x,.8,z);scene.add(m);particles.push({m,v:new T.Vector3((Math.random()-.5)*3,2+Math.random()*2,(Math.random()-.5)*3),life:.8+Math.random()*.4})}}
 function toast(text){$('toast').textContent=text;$('toast').classList.add('visible');toastUntil=t+2.8}
 function ui(){
@@ -35,12 +87,12 @@ function ui(){
   $('hearts').textContent='♥ '.repeat(state.lives)+'♡ '.repeat(3-state.lives);$('hearts').setAttribute('aria-label',`${state.lives} vidas`);
 }
 function restart(){
-  sound.unlock();controls.clear();state=freshState();player={...LEVEL.spawn};enemy={...LEVEL.crabSpawn};heading=Math.PI;enemyHeading=0;aiTimer=0;phase='roam';captureGrace=0;attackTimer=0;stepTimer=0;moodUntil=0;warning.visible=false;
+  sound.unlock();controls.clear();state=freshState();player={...activeLevel.spawn};enemy={...activeLevel.crabSpawn};heading=Math.PI;enemyHeading=0;aiTimer=0;phase='roam';captureGrace=0;attackTimer=0;stepTimer=0;moodUntil=0;warning.visible=false;
   prizes.forEach(p=>{p.root.visible=true;p.ring.visible=true});
   for(const id of ['intro','pause-screen','result'])$(id).hidden=true;
   $('hud').hidden=false;$('controls').hidden=false;$('bark').hidden=false;$('confetti').replaceChildren();ui();
   look.set(player.x,1,player.z);camera.position.set(player.x,12,player.z+14);
-  toast('¡Vamos, Mati! Busca al cangrejo y los 5 premios.');
+  toast(selectedWorld==='forest'?'¡Mati, cruza el puente y busca los tesoros mágicos!':'¡Vamos, Mati! Busca al cangrejo y los 5 premios.');
 }
 function pause(){if(state.mode!=='playing')return;state.mode='paused';controls.clear();$('pause-screen').hidden=false;$('controls').hidden=true;$('bark').hidden=true}
 function resume(){if(state.mode!=='paused')return;state.mode='playing';sound.unlock();controls.clear();$('pause-screen').hidden=true;$('controls').hidden=false;$('bark').hidden=false;clock.getDelta()}
@@ -50,7 +102,18 @@ function onPress(button,action){
   button.addEventListener('pointerup',e=>{if(e.pointerType==='touch'){e.preventDefault();lastTouch=performance.now();action()}});
   button.addEventListener('click',()=>{if(performance.now()-lastTouch>500)action()});
 }
-onPress($('play'),restart);document.querySelectorAll('.restart').forEach(b=>onPress(b,restart));onPress($('pause'),pause);onPress($('resume'),resume);
+onPress($('play'),restart);
+document.querySelectorAll('[data-world]').forEach(button=>onPress(button,()=>{
+  if(state.mode==='intro')chooseWorld(button.dataset.world);
+}));
+document.querySelectorAll('.restart').forEach(b=>onPress(b,restart));
+onPress($('next-world'),()=>{
+  if(state.mode==='won'&&selectedWorld==='patio'){
+    chooseWorld('forest');
+    restart();
+  }
+});
+onPress($('pause'),pause);onPress($('resume'),resume);
 let lastBarkAt=-Infinity;
 onPress($('bark'),()=>{
   if(state.mode!=='playing')return;
@@ -72,18 +135,18 @@ addEventListener('keydown',e=>{if(e.key==='Escape'){state.mode==='paused'?resume
 canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();toast('El navegador pausó la imagen. Recarga para volver al patio.');});
 function finish(){
   controls.clear();$('controls').hidden=true;$('bark').hidden=true;$('result').hidden=false;
-  const win=state.mode==='won';$('result-title').textContent=win?'¡LO LOGRASTE, MATI!':'¡Vamos otra vez!';$('result-copy').textContent=win?'Encontraste los 5 premios y atrapaste 5 veces a Mr. Cangrejo. ¡Cooper está feliz!':'Cooper necesita un descanso. ¡Prueba a rodear la tenaza cuando el cangrejo la levante!';$('result-stars').textContent=win?'★ ★ ★':'🐾';
+  const win=state.mode==='won';$('next-world').hidden=!(win&&selectedWorld==='patio');$('result-title').textContent=win?'¡LO LOGRASTE, MATI!':'¡Vamos otra vez!';$('result-copy').textContent=win?'Encontraste los 5 premios y atrapaste 5 veces a Mr. Cangrejo. ¡Cooper está feliz!':'Cooper necesita un descanso. ¡Prueba a rodear la tenaza cuando el cangrejo la levante!';$('result-stars').textContent=win?'★ ★ ★':'🐾';
   if(win){sound.play('win');for(let i=0;i<50;i++){const piece=document.createElement('i');piece.className='confetto';piece.style.left=`${Math.random()*100}%`;piece.style.background=['#ffd66b','#75b8a6','#ef9b83','#fff5ca'][i%4];piece.style.animationDelay=`${Math.random()*1.2}s`;$('confetti').append(piece)}}
 }
 function teleportEnemy(){
-  const options=[{x:-9,z:-10},{x:9,z:-9},{x:0,z:-12},{x:10,z:-1},{x:-10,z:-2}].filter(p=>Math.hypot(p.x-player.x,p.z-player.z)>6);
+  const options=activeLevel.teleports.filter(p=>Math.hypot(p.x-player.x,p.z-player.z)>6);
   enemy={...options[Math.floor(Math.random()*options.length)]};captureGrace=1.6;phase='roam';aiTimer=0;attackTimer=2;warning.visible=false;
 }
 function angleToward(current,target,dt){return current+Math.atan2(Math.sin(target-current),Math.cos(target-current))*(1-Math.exp(-12*dt))}
 function step(dt){
   state.time+=dt;state.invulnerable=Math.max(0,state.invulnerable-dt);captureGrace=Math.max(0,captureGrace-dt);attackTimer-=dt;
   const input=controls.read(),speed=Math.hypot(input.x,input.z)*4.8;
-  player=move(player,input.x*4.8*dt,input.z*4.8*dt);
+  player=move(player,input.x*4.8*dt,input.z*4.8*dt,activeLevel);
   if(speed>.05){heading=angleToward(heading,Math.atan2(input.x,input.z),dt);stepTimer-=dt;if(stepTimer<=0){sound.play('step');stepTimer=.26}}
   const distance=Math.hypot(enemy.x-player.x,enemy.z-player.z);
   aiTimer-=dt;
@@ -105,12 +168,12 @@ function step(dt){
   warning.visible=phase==='warning'||phase==='attack';warning.position.set(enemy.x,.035,enemy.z);warning.material.opacity=.45+Math.sin(t*14)*.25;
   const claw={x:enemy.x+Math.cos(enemyHeading)*.95+Math.sin(enemyHeading)*.65,z:enemy.z-Math.sin(enemyHeading)*.95+Math.cos(enemyHeading)*.65};
   if(phase==='attack'&&Math.hypot(player.x-claw.x,player.z-claw.z)<1.28){
-    if(award(state,'hit')){mood='hurt';moodUntil=t+.65;toast('¡Cuidado con la tenaza!');burst(player.x,player.z,'#eea58b');ui();if(state.mode==='lost')finish()}
+    if(award(state,'hit',undefined,activeLevel)){mood='hurt';moodUntil=t+.65;toast('¡Cuidado con la tenaza!');burst(player.x,player.z,'#eea58b');ui();if(state.mode==='lost')finish()}
   }else if(captureGrace<=0&&distance<1.15&&phase!=='attack'&&state.captures<5){
-    if(award(state,'capture')){sound.play('capture');mood='happy';moodUntil=t+.8;burst(enemy.x,enemy.z,'#ffe18b');toast('¡Cooper lo atrapó!');teleportEnemy();ui();if(state.mode==='won')finish()}
+    if(award(state,'capture',undefined,activeLevel)){sound.play('capture');mood='happy';moodUntil=t+.8;burst(enemy.x,enemy.z,'#ffe18b');toast('¡Cooper lo atrapó!');teleportEnemy();ui();if(state.mode==='won')finish()}
   }
   prizes.forEach(p=>{if(p.root.visible&&Math.hypot(player.x-p.root.position.x,player.z-p.root.position.z)<.95){
-    if(award(state,'prize',p.id)){p.root.visible=p.ring.visible=false;sound.play('prize');burst(player.x,player.z,'#ffe18b');mood='happy';moodUntil=t+.55;toast('¡Un premio para Cooper!');ui();if(state.mode==='won')finish()}
+    if(award(state,'prize',p.id,activeLevel)){p.root.visible=p.ring.visible=false;sound.play('prize');burst(player.x,player.z,'#ffe18b');mood='happy';moodUntil=t+.55;toast('¡Un premio para Cooper!');ui();if(state.mode==='won')finish()}
   }});
   return speed;
 }
@@ -137,5 +200,5 @@ renderer.compile(scene,camera);$('loading').hidden=true;$('intro').hidden=false;
 // Test hooks exist only for local automated testing and are absent during normal play.
 if(new URLSearchParams(location.search).has('test'))window.__cooperTest={
   get state(){return {...state,collected:[...state.collected]}},get player(){return {...player}},get enemy(){return {...enemy}},get input(){return controls.read()},get audio(){return {state:sound.context?.state,muted:sound.muted,barks:sound.barkCount}},get stats(){return renderer.info},
-  teleport(x,z){player=move(player,x-player.x,z-player.z)},place(x,z){player={x,z}},enemyAt(x,z){enemy={x,z};captureGrace=0;phase='recover';aiTimer=10},attackAt(x,z){enemy={x,z};phase='warning';aiTimer=.2;enemyHeading=0;state.invulnerable=0},restart,pause,resume,
+  get selectedWorld(){return selectedWorld},switchWorld:chooseWorld,teleport(x,z){player=move(player,x-player.x,z-player.z,activeLevel)},place(x,z){player={x,z}},enemyAt(x,z){enemy={x,z};captureGrace=0;phase='recover';aiTimer=10},attackAt(x,z){enemy={x,z};phase='warning';aiTimer=.2;enemyHeading=0;state.invulnerable=0},restart,pause,resume,
 };
