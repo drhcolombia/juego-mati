@@ -94,7 +94,7 @@ test('Mundo 1: pantalla de victoria permite descubrir Mundo 2',async({page})=>{
   }
   await expect(page.locator('#next-world')).toBeVisible();
   await page.locator('#next-world').click();
-  expect(await page.evaluate(()=>window.__cooperTest.selectedWorld)).toBe('forest');
+  await expect.poll(async()=>await page.evaluate(()=>window.__cooperTest.selectedWorld),{timeout:15000}).toBe('forest');
   await expect(page.locator('#level-name')).toHaveText('El Bosque Encantado');
   await expect(page.locator('#result')).toBeHidden();
   await expect(page.locator('#joystick')).toBeVisible();
