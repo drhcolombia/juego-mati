@@ -99,3 +99,18 @@ test('Mundo 1: pantalla de victoria permite descubrir Mundo 2',async({page})=>{
   await expect(page.locator('#result')).toBeHidden();
   await expect(page.locator('#joystick')).toBeVisible();
 });
+
+test('El Patio carga aunque el recurso del Bosque no esté disponible',async({page})=>{
+  const requests=[];
+  await page.route('**/src/world-forest.js*',route=>{
+    requests.push(route.request().url());
+    return route.abort();
+  });
+  await page.goto('?test=1');
+  await expect(page.locator('#intro')).toBeVisible();
+  expect(requests).toHaveLength(0);
+  await page.locator('#play').click();
+  await expect(page.locator('#joystick')).toBeVisible();
+  await expect(page.locator('#bark')).toBeVisible();
+  expect(requests).toHaveLength(0);
+});

@@ -62,3 +62,5 @@
  .world-option strong{font-size:12px}
  .world-option small{font-size:10px}
 }
+/* Un reintento accesible si Safari no consigue cargar el escenario. */
+#loading .primary{min-height:52px;padding:12px 23px;font-size:17px;margin-top:12px}

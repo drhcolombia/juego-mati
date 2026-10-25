@@ -1,7 +1,6 @@
 import * as T from './vendor/three.module.js';
 import {LEVELS,PRIZES,clamp,move,freshState,award} from './src/level.js';
 import {createWorld} from './src/world.js';
-import {createForestWorld} from './src/world-forest.js';
 import {createCooper,createCrab,createPrize,mat} from './src/models.js';
 import {Controls} from './src/input.js';
 import {Sound} from './src/audio.js?v=2.2';
@@ -17,7 +16,9 @@ try{
 // Pruebas automáticas: usa renderizado reducido para que SwiftShader (CPU de CI)
  // compruebe los controles sin afectar la calidad en los iPad reales.
 const isBrowserTest=new URLSearchParams(location.search).has('test');
-renderer.setPixelRatio(isBrowserTest?.65:Math.min(devicePixelRatio,1.5));
+// iPad y tabletas: reducir densidad de pixeles evita saturar la memoria grafica.
+const isTouchDevice=navigator.maxTouchPoints>0||matchMedia('(pointer: coarse)').matches;
+renderer.setPixelRatio(isBrowserTest?.65:Math.min(devicePixelRatio,isTouchDevice?1:1.5));
 renderer.shadowMap.enabled=!isBrowserTest;
 renderer.shadowMap.type=T.PCFSoftShadowMap;
 renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.14;
@@ -40,44 +41,68 @@ const prizes=PRIZES.map((p,i)=>{
 const warning=new T.Mesh(new T.RingGeometry(1.50,1.63,48),new T.MeshBasicMaterial({color:'#efb85b',transparent:true,opacity:.85,side:T.DoubleSide}));warning.rotation.x=-Math.PI/2;warning.visible=false;scene.add(warning);
 const particleGeometry=new T.OctahedronGeometry(.07),particles=[];
 
-// El selector conserva las escenas para que cambiar de mundo no requiera
-// descargar recursos ni volver a construir el mundo anterior.
-function chooseWorld(key){
-  if(!LEVELS[key])return;
-  if(key!==selectedWorld){
-    if(!worlds[key]){
+// Cargar el bosque solo cuando Mati lo elige: el patio puede iniciar incluso
+// con conexion lenta, sin bloquear la portada ni el resto del juego.
+let changingWorld=false;
+async function chooseWorld(key){
+  if(!LEVELS[key]||changingWorld)return false;
+  changingWorld=true;
+  const needsBuild=key!==selectedWorld&&!worlds[key];
+  try{
+    if(needsBuild){
+      const loading=$('loading');
+      loading.innerHTML='<span class="loading-paw">🌳</span><strong>Preparando el Bosque Encantado…</strong><span>¡Ya casi comienza la aventura!</span>';
+      loading.hidden=false;
+      // Permitir que Safari pinte el mensaje antes de construir los modelos.
+      await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+      const {createForestWorld}=await import('./src/world-forest.js?v=3.1');
       const nextScene=new T.Scene();
-      worlds[key]={scene:nextScene,world:createForestWorld(nextScene)};
+      const nextWorld=createForestWorld(nextScene);
+      worlds[key]={scene:nextScene,world:nextWorld};
     }
-    for(const particle of particles)particle.m.parent?.remove(particle.m);
-    particles.length=0;
-    ({scene,world}=worlds[key]);
-    scene.add(dog.root,crab.root,warning);
-    prizes.forEach(p=>scene.add(p.root,p.ring));
+    if(key!==selectedWorld){
+      for(const particle of particles)particle.m.parent?.remove(particle.m);
+      particles.length=0;
+      ({scene,world}=worlds[key]);
+      scene.add(dog.root,crab.root,warning);
+      prizes.forEach(p=>scene.add(p.root,p.ring));
+    }
+    selectedWorld=key;
+    activeLevel=LEVELS[key];
+    player={...activeLevel.spawn};enemy={...activeLevel.crabSpawn};
+    dog.root.position.set(player.x,0,player.z);
+    crab.root.position.set(enemy.x,0,enemy.z);
+    const forest=key==='forest';
+    $('level-badge').textContent=forest?'MUNDO 2':'MUNDO 1';
+    $('level-name').textContent=forest?'El Bosque Encantado':'El patio de Cooper';
+    $('intro-subtitle').textContent=forest?'y el Bosque Encantado':'y el patio de los tesoros';
+    $('intro-description').textContent=forest?'¡Cruza el puente y encuentra los tesoros mágicos!':'Un jardín conocido. ¡Una aventura nueva!';
+    $('scene-caption').textContent=forest?'✨ MUNDO 2 · EL BOSQUE ENCANTADO':'☀ MUNDO 1 · EL PATIO DE COOPER';
+    document.querySelectorAll('[data-world]').forEach(button=>{
+      const selected=button.dataset.world===key;
+      button.classList.toggle('selected',selected);
+      button.setAttribute('aria-pressed',String(selected));
+    });
+    prizes.forEach((p,i)=>{
+      const pos=activeLevel.prizes[i];
+      p.root.position.set(pos.x,.9,pos.z);
+      p.ring.position.set(pos.x,.025,pos.z);
+      p.root.visible=p.ring.visible=true;
+    });
+    return true;
+  }catch(error){
+    console.error('No se pudo cargar el bosque 3D',error);
+    const loading=$('loading');
+    loading.innerHTML='<span class="loading-paw">🐾</span><strong>No se pudo abrir el bosque</strong><span>El patio sigue disponible. Pulsa volver para continuar.</span><button id="back-to-patio" class="primary" type="button">Volver al Patio</button>';
+    loading.querySelector('#back-to-patio').addEventListener('click',()=>{
+      loading.hidden=true;
+      loading.innerHTML='<span class="loading-paw">🐾</span><strong>Preparando el patio…</strong><span>Una aventura para Mati</span>';
+    },{once:true});
+    return false;
+  }finally{
+    if(worlds[key]||!needsBuild)$('loading').hidden=true;
+    changingWorld=false;
   }
-  selectedWorld=key;
-  activeLevel=LEVELS[key];
-  player={...activeLevel.spawn};enemy={...activeLevel.crabSpawn};
-  dog.root.position.set(player.x,0,player.z);
-  crab.root.position.set(enemy.x,0,enemy.z);
-  const forest=key==='forest';
-  $('level-badge').textContent=forest?'MUNDO 2':'MUNDO 1';
-  $('level-name').textContent=forest?'El Bosque Encantado':'El patio de Cooper';
-  $('intro-subtitle').textContent=forest?'y el Bosque Encantado':'y el patio de los tesoros';
-  $('intro-description').textContent=forest?'¡Cruza el puente y encuentra los tesoros mágicos!':'Un jardín conocido. ¡Una aventura nueva!';
-  $('scene-caption').textContent=forest?'✨ MUNDO 2 · EL BOSQUE ENCANTADO':'☀ MUNDO 1 · EL PATIO DE COOPER';
-  document.querySelectorAll('[data-world]').forEach(button=>{
-    const selected=button.dataset.world===key;
-    button.classList.toggle('selected',selected);
-    button.setAttribute('aria-pressed',String(selected));
-  });
-  prizes.forEach((p,i)=>{
-    const pos=activeLevel.prizes[i];
-    p.root.position.set(pos.x,.9,pos.z);
-    p.ring.position.set(pos.x,.025,pos.z);
-    p.root.visible=p.ring.visible=true;
-  });
-  if(forest)renderer.compile(scene,camera);
 }
 
 function burst(x,z,color){for(let i=0;i<18;i++){const m=new T.Mesh(particleGeometry,mat(color));m.position.set(x,.8,z);scene.add(m);particles.push({m,v:new T.Vector3((Math.random()-.5)*3,2+Math.random()*2,(Math.random()-.5)*3),life:.8+Math.random()*.4})}}
@@ -109,8 +134,7 @@ document.querySelectorAll('[data-world]').forEach(button=>onPress(button,()=>{
 document.querySelectorAll('.restart').forEach(b=>onPress(b,restart));
 onPress($('next-world'),()=>{
   if(state.mode==='won'&&selectedWorld==='patio'){
-    chooseWorld('forest');
-    restart();
+    chooseWorld('forest').then(ready=>{if(ready)restart()});
   }
 });
 onPress($('pause'),pause);onPress($('resume'),resume);
@@ -196,7 +220,8 @@ function render(){
   }
   if(t>toastUntil)$('toast').classList.remove('visible');renderer.render(scene,camera);
 }
-renderer.compile(scene,camera);$('loading').hidden=true;$('intro').hidden=false;render();
+// No compilar shaders antes de pintar la portada: en Safari puede bloquear.
+$('loading').hidden=true;$('intro').hidden=false;window.dispatchEvent(new Event('cooper-ready'));render();
 // Test hooks exist only for local automated testing and are absent during normal play.
 if(new URLSearchParams(location.search).has('test'))window.__cooperTest={
   get state(){return {...state,collected:[...state.collected]}},get player(){return {...player}},get enemy(){return {...enemy}},get input(){return controls.read()},get audio(){return {state:sound.context?.state,muted:sound.muted,barks:sound.barkCount}},get stats(){return renderer.info},
