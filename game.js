@@ -14,7 +14,12 @@ try{
   $('loading').innerHTML='<strong>Este navegador no pudo abrir el patio 3D.</strong><span>Prueba con una versión reciente de Safari o Chrome.</span>';
   throw new Error('WebGL2 unavailable');
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+// Pruebas automáticas: usa renderizado reducido para que SwiftShader (CPU de CI)
+ // compruebe los controles sin afectar la calidad en los iPad reales.
+const isBrowserTest=new URLSearchParams(location.search).has('test');
+renderer.setPixelRatio(isBrowserTest?.65:Math.min(devicePixelRatio,1.5));
+renderer.shadowMap.enabled=!isBrowserTest;
+renderer.shadowMap.type=T.PCFSoftShadowMap;
 renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.14;
 let scene=new T.Scene();
 const camera=new T.PerspectiveCamera(46,1,.1,100);
