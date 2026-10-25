@@ -1,0 +1,37 @@
+name: Probar Cooper 3D
+
+on:
+  push:
+    branches:
+      - codex/cooper-bosque-encantado
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Obtener código
+        uses: actions/checkout@v4
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Instalar navegador de prueba
+        run: npx playwright install --with-deps chromium
+      - name: Pruebas de lógica
+        run: npm test
+      - name: Pruebas de navegador
+        run: npm run test:browser
+      - name: Guardar capturas si hay fallos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cooper-test-results
+          path: test-results/
+          retention-days: 7
