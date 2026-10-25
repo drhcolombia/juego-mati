@@ -39,3 +39,55 @@ test('portrait: real touch joystick, second finger, cancellation, damage and Gam
   expect((await page.evaluate(()=>window.__cooperTest.state)).lives).toBe(0);await expect(page.locator('#result')).toBeVisible();
   await context.close();
 });
+
+test('Mundo 2: elegir bosque, cruzar puente, ganar y regresar al patio',async({page})=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.setViewportSize({width:1180,height:820});
+  await page.goto('?test=1');
+  await expect(page.locator('#intro')).toBeVisible();
+  await page.locator('[data-world="forest"]').click();
+  await expect(page.locator('#intro-subtitle')).toHaveText('y el Bosque Encantado');
+  expect(await page.evaluate(()=>window.__cooperTest.selectedWorld)).toBe('forest');
+  await page.screenshot({path:'test-results/05-bosque-portada.png'});
+  await page.locator('#play').click();
+  await expect(page.locator('#level-name')).toHaveText('El Bosque Encantado');
+  const spawn=await page.evaluate(()=>window.__cooperTest.player);
+  expect(spawn).toMatchObject({x:0,z:9});
+  await page.evaluate(()=>{window.__cooperTest.place(9,4);window.__cooperTest.teleport(9,-5)});
+  expect((await page.evaluate(()=>window.__cooperTest.player)).z).toBeGreaterThan(1.6);
+  await page.evaluate(()=>{window.__cooperTest.place(0,4);window.__cooperTest.teleport(0,-5)});
+  expect((await page.evaluate(()=>window.__cooperTest.player)).z).toBeLessThan(-4.8);
+  await page.screenshot({path:'test-results/06-bosque-jugable.png'});
+  for(const [x,z] of [[-8,8],[-8,-9],[0,-10],[9,-9],[8,9]]){
+    await page.evaluate(([x,z])=>window.__cooperTest.place(x,z),[x,z]);
+    await page.waitForTimeout(110);
+  }
+  expect((await page.evaluate(()=>window.__cooperTest.state)).prizes).toBe(5);
+  for(let i=0;i<5;i++){
+    await page.evaluate(()=>{window.__cooperTest.place(0,-5);window.__cooperTest.enemyAt(0,-5)});
+    await page.waitForTimeout(120);
+  }
+  await expect(page.locator('#result-title')).toHaveText('¡LO LOGRASTE, MATI!');
+  await expect(page.locator('#next-world')).toBeHidden();
+  await page.locator('#result .restart').click();
+  expect(await page.evaluate(()=>window.__cooperTest.selectedWorld)).toBe('forest');
+  expect((await page.evaluate(()=>window.__cooperTest.state)).captures).toBe(0);
+  expect(errors).toEqual([]);
+});
+test('Mundo 1: pantalla de victoria permite descubrir Mundo 2',async({page})=>{
+  await page.goto('?test=1');await page.locator('#play').click();
+  for(const [x,z] of [[-10,-2],[-8,-10],[0,-12],[9,-9],[11,0]]){
+    await page.evaluate(([x,z])=>window.__cooperTest.place(x,z),[x,z]);
+    await page.waitForTimeout(110);
+  }
+  for(let i=0;i<5;i++){
+    await page.evaluate(()=>{window.__cooperTest.place(0,-5);window.__cooperTest.enemyAt(0,-5)});
+    await page.waitForTimeout(120);
+  }
+  await expect(page.locator('#next-world')).toBeVisible();
+  await page.locator('#next-world').click();
+  expect(await page.evaluate(()=>window.__cooperTest.selectedWorld)).toBe('forest');
+  await expect(page.locator('#level-name')).toHaveText('El Bosque Encantado');
+  await expect(page.locator('#result')).toBeHidden();
+  await expect(page.locator('#joystick')).toBeVisible();
+});
