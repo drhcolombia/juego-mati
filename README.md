@@ -1,6 +1,6 @@
 # Cooper — El patio de Cooper
 
-Primera aventura 3D para Mati. Esta versión se desarrolla en `codex/cooper-3d-v2` y requiere revisión antes de fusionarse. No cambia la configuración de GitHub Pages ni despliega la rama de desarrollo.
+Aventura 3D de Cooper para Mati. La rama `codex/cooper-bosque-encantado` introduce un segundo mundo independiente para revisión, sin cambiar la versión publicada en GitHub Pages.
 
 ![Vista del patio](docs/previews/inicio.png)
 
@@ -75,3 +75,23 @@ Para confirmar que el iPad muestra la versión nueva, abrir
 `https://drhcolombia.github.io/juego-mati/?v=2.2` en Safari. La portada
 debe mostrar **Cooper v2.2**. Un acceso agregado a inicio puede conservar HTML
 antiguo; cerrar la app desde el selector de aplicaciones y volver a abrirla.
+
+## Mundo 2: El Bosque Encantado
+
+Se añade un segundo escenario 3D con pinos gigantes, hongos, cristales,
+luciérnagas, senderos y un río que Cooper únicamente puede cruzar por el
+puente central. Desde el inicio se puede elegir entre **El Patio** y
+**Bosque Encantado**. Ambos mundos mantienen 5 capturas, 5 premios,
+3 corazones, joystick, ladrido, pausa y sonido.
+
+Completar el Patio también muestra un botón para pasar directamente al
+Bosque. Las posiciones y barreras de cada mundo están definidas en
+`src/level.js`; la escena 3D del bosque vive en `src/world-forest.js`.
+Las escenas se guardan en memoria y solo se dibuja la activa. No hay
+descargas de modelos ni materiales externos para el bosque.
+
+Pruebas de lógica: piscina, barreras del río, puente, recompensas de ambos
+mundos y reglas de victoria. Pruebas de navegador añadidas: selección de
+mundo, pantalla del bosque, movimiento y límites, recompensa, victoria,
+reinicio y transición al Bosque al ganar el Patio.
+La prueba física en Safari para iPad sigue siendo recomendable.
